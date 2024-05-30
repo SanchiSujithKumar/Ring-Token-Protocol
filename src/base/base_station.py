@@ -1,6 +1,7 @@
 import time
 import threading
 import socket
+import json
 
 deliver_msg = False
 msg = ""
@@ -13,7 +14,9 @@ def input(input_socket):
     while True:
         if not deliver_msg :
             message = input_socket.recv(1024)
-            print(message.decode())
+            token = json.loads(message.decode())
+            # if token["is_taken"]:
+            #     print(token)
             input_socket.send('.'.encode())
             msg = message
             deliver_msg = True
@@ -24,7 +27,6 @@ def deliver(neighbour):
         if deliver_msg :
             neighbour.send(msg)
             ack = neighbour.recv(1024)
-            time.sleep(1)
             deliver_msg = False
         if new_node:
             neighbour.send('cis'.encode())
@@ -53,9 +55,17 @@ def output(output_socket):
             input_socket.connect((host, int(port)))
             thread_input = threading.Thread(target=input, args=(input_socket,))
             thread_input.start()
-            neighbour.send("token".encode())
+            token={
+                "is_taken" : False,
+                "source_id" : 0,
+                "distination_id" : 0,
+                "payload" : "",
+                "ack" : False,
+                "time_sent" : None
+            }
+            token_string = json.dumps(token)
+            neighbour.send(token_string.encode())
             ack = neighbour.recv(1024)
-            time.sleep(1)
             has_ring = True
         else:
             new_node = True
