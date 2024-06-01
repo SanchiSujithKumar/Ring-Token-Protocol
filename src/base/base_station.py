@@ -8,16 +8,14 @@ deliver_msg = False
 msg = ""
 has_ring = False
 new_node = False
-i=1
+i = 1
 
 def input(input_socket):
     global deliver_msg, msg
     while True:
-        if not deliver_msg :
+        if not deliver_msg:
             message = input_socket.recv(1024)
             token = json.loads(message.decode())
-            # if token["is_taken"]:
-            #     print(token)
             input_socket.send('.'.encode())
             msg = message
             deliver_msg = True
@@ -25,10 +23,12 @@ def input(input_socket):
 def deliver(neighbour):
     global deliver_msg, msg, new_node, i
     while True:
-        if deliver_msg :
+        
+        if deliver_msg:
             neighbour.send(msg)
             ack = neighbour.recv(1024)
             deliver_msg = False
+            
         if new_node:
             neighbour.send('cis'.encode())
             ack = neighbour.recv(1024)
@@ -37,12 +37,13 @@ def deliver(neighbour):
             neighbour.send(port.encode())
             ack = neighbour.recv(1024)
             neighbour.close()
-            new_node=False
+            new_node = False
             break
 
 def output(output_socket):
     global deliver_msg, msg, i, new_node, has_ring
     while True:
+        
         neighbour, addr = output_socket.accept()
         port = 12345 + i
         i = i + 1
@@ -56,18 +57,19 @@ def output(output_socket):
             input_socket.connect((host, int(port)))
             thread_input = threading.Thread(target=input, args=(input_socket,))
             thread_input.start()
-            token={
-                "is_taken" : False,
-                "source_id" : 0,
-                "distination_id" : 0,
-                "payload" : "",
-                "ack" : False,
-                "time_sent" : None
+            token = {
+                "is_taken": False,
+                "source_id": 0,
+                "destination_id": 0,
+                "payload": "",
+                "ack": False,
+                "time_sent": 0
             }
             token_string = json.dumps(token)
             neighbour.send(token_string.encode())
             ack = neighbour.recv(1024)
             has_ring = True
+            
         else:
             new_node = True
             thread_deliver.join()
