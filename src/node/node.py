@@ -131,7 +131,6 @@ def main():
 
     thread_output = threading.Thread(target=output, args=(output_socket,))
     thread_output.start()
-
     thread_input = threading.Thread(target=inputsocket, args=(input_socket,))
     thread_input.start()
 
@@ -139,8 +138,10 @@ def main():
     print("Station: Node " + str(id))
     while True:
         if not send_packet:
-            nop = int(input("\n**Enter the no. of packets you want to send:**\n"))
-            for i in range(nop):
+            nop = len(payload)
+            inpl = int(input("\n**Enter the no. of packets you want to send:**\n"))
+            nop += inpl
+            for i in range(inpl):
                 destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
                 payl = input("Enter the message: ")
                 payload.append((destination, payl))
