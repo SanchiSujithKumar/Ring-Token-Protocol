@@ -63,6 +63,7 @@ def inputsocket(input_socket):
             token = json.loads(recived_packet)
             if token["destination_id"] == id and token["source_id"] != 0:
                 x = random.random()
+                x=0.4
                 if x > 0.3:
                     msg_to_be_recived = token["num_of_packets"]
                     token["ack"] = True
@@ -158,10 +159,17 @@ def main():
     while True:
         if not send_packet:
             inpl = int(input("\n**Enter the no. of packets you want to send:**\n"))
-            for i in range(inpl):
-                destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
-                payl = input("Enter the message: ")
-                payload.append((destination, payl))
+            if inpl == 0 :
+                for __ in range (10):
+                    for i in range(2):
+                        for _ in range(3):
+                            destination = id + i + 1
+                            payload.append((destination, str("sample text")))
+            else :
+                for i in range(inpl):
+                    destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
+                    payl = input("Enter the message: ")
+                    payload.append((destination, payl))
             send_packet = True
 
 main()
