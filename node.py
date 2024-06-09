@@ -12,6 +12,7 @@ send_packet = False
 limit = 3
 tl = 0
 num_of_packets_to_send = 0
+avg_rtt = 0
 
 def set_tl():
     global tl
@@ -23,10 +24,10 @@ def reset_tl():
     tl = 0
 
 def inputsocket(input_socket):
-    global forward_packet, packet, id, payload, send_packet, limit, tl, num_of_packets_to_send
+    global forward_packet, packet, id, payload, send_packet, limit, tl, num_of_packets_to_send, avg_rtt
 
     token = {}
-    msg_to_be_recived = 0
+    msg_to_be_received = 0
     start_time = 0
     retransmission = 0
 
@@ -45,13 +46,13 @@ def inputsocket(input_socket):
                 input_socket.connect((host, int(port)))
                 continue
 
-            recived_packet = message.decode()
+            received_packet = message.decode()
 
-            if not recived_packet.startswith("{") :
-                if msg_to_be_recived > 0 :
-                    print("\n[Message received] <node" + str(token["source_id"]) + "> : " + recived_packet)
-                    msg_to_be_recived -= 1
-                    if msg_to_be_recived == 0 :
+            if not received_packet.startswith("{") :
+                if msg_to_be_received > 0 :
+                    print("\n[Message received] <node" + str(token["source_id"]) + "> : " + received_packet)
+                    msg_to_be_received -= 1
+                    if msg_to_be_received == 0 :
                         packet = json.dumps(token).encode()
                         forward_packet = True
                 else :
@@ -60,12 +61,12 @@ def inputsocket(input_socket):
                 input_socket.send('.'.encode())
                 continue
 
-            token = json.loads(recived_packet)
+            token = json.loads(received_packet)
             if token["destination_id"] == id and token["source_id"] != 0:
                 x = random.random()
                 x=0.4
                 if x > 0.3:
-                    msg_to_be_recived = token["num_of_packets"]
+                    msg_to_be_received = token["num_of_packets"]
                     token["ack"] = True
                     input_socket.send('.'.encode())
                     continue
@@ -79,11 +80,13 @@ def inputsocket(input_socket):
             
             if token["is_taken"] and token["source_id"] == id:
                 if token["ack"] or retransmission == 2:
+                    avg_rtt += time.time() - token["time_sent"]
                     print("\nRTT:", time.time() - token["time_sent"])
                     token["num_of_packets"] = 0
                     token["ack"] = False
                     token["time_sent"] = None
                     token["destination_id"] = 0
+                    retransmission = 0
                     for i in range(num_of_packets_to_send) :
                         payload.remove(payload[0])
                     num_of_packets_to_send = 0
@@ -96,6 +99,8 @@ def inputsocket(input_socket):
                     if tht > limit:
                         print("\nToken Timeout")
                     print("Token Holding Time:", tht)
+                    if not len(payload):
+                        print("Average RTT for a packet:", avg_rtt/30)
                     print()
                     token["is_taken"] = False
                     token["source_id"] = 0
@@ -124,14 +129,14 @@ def inputsocket(input_socket):
             input_socket.send('.'.encode())
 
 def output(output_socket):
-    global forward_packet, packet, num_of_packets_to_send, payload
+    global forward_packet, packet, num_of_packets_to_send, payload, retransmission
     neighbour, addr = output_socket.accept()
     while True:
         if forward_packet:
             neighbour.send(packet)
             Ack = neighbour.recv(1024)
             for i in range(num_of_packets_to_send):
-                neighbour.send(payload[i][1].encode())
+                neighbour.send((payload[i][1]).encode())
                 Ack = neighbour.recv(1024)
             forward_packet = False
 
@@ -161,10 +166,20 @@ def main():
             inpl = int(input("\n**Enter the no. of packets you want to send:**\n"))
             if inpl == 0 :
                 for __ in range (10):
-                    for i in range(2):
-                        for _ in range(3):
-                            destination = id + i + 1
-                            payload.append((destination, str("sample text")))
+                    while(True):
+                        destination = random.randint(1, 5)
+                        if destination != id:
+                            break
+                    for _ in range(3):
+                        # destination = id + i + 1
+                        payload.append((destination, str("sample text")))
+            if inpl == -1 :
+                for __ in range (20):
+                    while(True):
+                        destination = random.randint(1, 5)
+                        if destination != id:
+                            break
+                    payload.append((destination, str("sample text")))             
             else :
                 for i in range(inpl):
                     destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
