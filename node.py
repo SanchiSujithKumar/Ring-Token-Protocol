@@ -114,10 +114,14 @@ def inputsocket(input_socket):
                     token["destination_id"] = int(payload[0][0])
                     num_of_packets_to_send = 1
                     while len(payload) > num_of_packets_to_send :
+                        if tht > limit - 0.1 * num_of_packets_to_send:
+                            break
                         if payload[num_of_packets_to_send][0] == payload[0][0] :
                             num_of_packets_to_send += 1
                         else :
                             break
+                        if num_of_packets_to_send == 7:
+                            break 
                     token["num_of_packets"] = num_of_packets_to_send
                     token["ack"] = False
                     retransmission = 0

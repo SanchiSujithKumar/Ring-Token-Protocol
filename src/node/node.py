@@ -49,6 +49,7 @@ def inputsocket(input_socket):
                 # print("S2")
                 x = random.random()
                 # print(x)
+                x = 0.4
                 if x > 0.3:
                     print("\n[Message received] <node" + str(token["source_id"]) + "> : " + token["payload"])
                     token["ack"] = True
