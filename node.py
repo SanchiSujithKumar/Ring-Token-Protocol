@@ -3,6 +3,7 @@ import threading
 import socket
 import json
 import random
+import bisect
 
 id = 0
 forward_packet = False
@@ -13,6 +14,7 @@ limit = 3
 tl = 0
 num_of_packets_to_send = 0
 avg_rtt = 0
+ready = False
 
 def set_tl():
     global tl
@@ -24,7 +26,7 @@ def reset_tl():
     tl = 0
 
 def inputsocket(input_socket):
-    global forward_packet, packet, id, payload, send_packet, limit, tl, num_of_packets_to_send, avg_rtt
+    global forward_packet, packet, id, payload, send_packet, limit, tl, num_of_packets_to_send, avg_rtt, ready
 
     token = {}
     msg_to_be_received = 0
@@ -99,12 +101,11 @@ def inputsocket(input_socket):
                     if tht > limit:
                         print("\nToken Timeout")
                     print("Token Holding Time:", tht)
-                    if not len(payload):
-                        print("Average RTT for a packet:", avg_rtt/30)
                     print()
                     token["is_taken"] = False
                     token["source_id"] = 0
                     send_packet = False
+                    ready = False
                     if len(payload):
                         send_packet = True
                     message = json.dumps(token).encode()
@@ -145,7 +146,7 @@ def output(output_socket):
             forward_packet = False
 
 def main():
-    global forward_packet, packet, id, payload, send_packet
+    global forward_packet, packet, id, payload, send_packet, ready
 
     input_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = 'localhost'
@@ -166,17 +167,25 @@ def main():
     id = int(port) - 12345
     print("Station: Node " + str(id))
     while True:
-        if not send_packet:
+        if not ready:
             inpl = int(input("\n**Enter the no. of packets you want to send:**\n"))
             if inpl == 0 :
-                for __ in range (10):
-                    while(True):
-                        destination = random.randint(1, 5)
-                        if destination != id:
-                            break
-                    for _ in range(3):
-                        # destination = id + i + 1
-                        payload.append((destination, str("sample text")))
+                destination = 0
+                for __ in range (100):
+                    # while(True):
+                    #     destination = random.randint(1, 5)
+                    #     if destination != id:
+                    #         break
+                    # # destination = id + i + 1
+                    # # payload.append((destination, str("sample text")))
+                    destination += 1
+                    if destination == id :
+                        destination += 1
+                    if destination > 5 :
+                        destination %= 5
+                        if id == 1 :
+                            destination += 1
+                    bisect.insort(payload, (destination, str("Sample Text")))
             if inpl == -1 :
                 for __ in range (20):
                     while(True):
@@ -190,5 +199,6 @@ def main():
                     payl = input("Enter the message: ")
                     payload.append((destination, payl))
             send_packet = True
+            ready = True
 
 main()
