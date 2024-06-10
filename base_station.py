@@ -66,6 +66,7 @@ def output(output_socket):
                 "destination_id": 0,
                 "num_of_packets": 0,
                 "ack": False,
+                "bitmap": "0000000",
                 "time_sent": None
             }
             token_string = json.dumps(token)

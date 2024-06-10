@@ -13,8 +13,9 @@ send_packet = False
 limit = 3
 tl = 0
 num_of_packets_to_send = 0
-avg_rtt = 0
 ready = False
+time_tracking = 0
+token = {}
 
 def set_tl():
     global tl
@@ -25,13 +26,24 @@ def reset_tl():
     global tl
     tl = 0
 
+    
 def inputsocket(input_socket):
-    global forward_packet, packet, id, payload, send_packet, limit, tl, num_of_packets_to_send, avg_rtt, ready
+    global forward_packet, packet, id, payload, token, send_packet, limit, tl, num_of_packets_to_send, ready, time_tracking
 
-    token = {}
+    # token = {}
     msg_to_be_received = 0
     start_time = 0
     retransmission = 0
+    
+    def check_time():
+        threading.Timer(1.5, send_signal).start()
+            
+    def send_signal():
+        global time_tracking, token, packet, forward_packet
+        if msg_to_be_received and time.time()-time_tracking>1.5:
+            token["ack"] = False
+            packet = json.dumps(token).encode()
+            forward_packet = True
 
     while True:
         if not forward_packet:
@@ -52,9 +64,12 @@ def inputsocket(input_socket):
 
             if not received_packet.startswith("{") :
                 if msg_to_be_received > 0 :
-                    print("\n[Message received] <node" + str(token["source_id"]) + "> : " + received_packet)
+                    print("\n[Message received] <node" + str(token["source_id"]) + ">: " + received_packet[:-1])
                     msg_to_be_received -= 1
+                    idx = 6-int(received_packet[-1])
+                    token["bitmap"] = token["bitmap"][:idx] + '1' + token["bitmap"][idx+1:]
                     if msg_to_be_received == 0 :
+                        token["ack"] = True
                         packet = json.dumps(token).encode()
                         forward_packet = True
                 else :
@@ -69,7 +84,9 @@ def inputsocket(input_socket):
                 x=0.4
                 if x > 0.3:
                     msg_to_be_received = token["num_of_packets"]
-                    token["ack"] = True
+                    time_tracking = time.time()
+                    check_time()
+                    # token["ack"] = True
                     input_socket.send('.'.encode())
                     continue
                 message = json.dumps(token).encode()
@@ -82,8 +99,8 @@ def inputsocket(input_socket):
             
             if token["is_taken"] and token["source_id"] == id:
                 if token["ack"] or retransmission == 2:
-                    avg_rtt += time.time() - token["time_sent"]
                     print("\nRTT:", time.time() - token["time_sent"])
+                    print("No. of packets:", token["num_of_packets"])
                     token["num_of_packets"] = 0
                     token["ack"] = False
                     token["time_sent"] = None
@@ -95,6 +112,9 @@ def inputsocket(input_socket):
                     message = json.dumps(token).encode()
                 else:
                     retransmission += 1
+                    for i in range(token["num_of_packets"]):
+                        if token["bitmap"][6-i]=='1':
+                            payload.remove(payload[i])
                 tht = time.time() - start_time
                 
                 if tht > limit or not len(payload):
@@ -125,7 +145,6 @@ def inputsocket(input_socket):
                             break 
                     token["num_of_packets"] = num_of_packets_to_send
                     token["ack"] = False
-                    retransmission = 0
                     token["time_sent"] = time.time()
                     message = json.dumps(token).encode()
                 
@@ -141,7 +160,7 @@ def output(output_socket):
             neighbour.send(packet)
             Ack = neighbour.recv(1024)
             for i in range(num_of_packets_to_send):
-                neighbour.send((payload[i][1]).encode())
+                neighbour.send((payload[i][1]+f"{i}").encode())
                 Ack = neighbour.recv(1024)
             forward_packet = False
 
@@ -192,7 +211,8 @@ def main():
                         destination = random.randint(1, 5)
                         if destination != id:
                             break
-                    payload.append((destination, str("sample text")))             
+                    # payload.append((destination, str("sample text"))) 
+                    bisect.insort(payload, (destination, str("Sample Text")))            
             else :
                 for i in range(inpl):
                     destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
