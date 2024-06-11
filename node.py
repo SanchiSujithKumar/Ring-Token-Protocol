@@ -18,6 +18,25 @@ time_tracking = 0
 token = {}
 msg_to_be_received = 0
 
+def distribute_tuples(tuples):
+    from collections import defaultdict
+
+    groups = defaultdict(list)
+    for a, b in tuples:
+        groups[a].append((a, b))
+    result = []
+    max_consecutive = 7
+    
+    while groups:
+        for a in sorted(groups.keys()):
+            count = min(max_consecutive, len(groups[a]))
+            result.extend(groups[a][:count])
+            groups[a] = groups[a][count:]
+            if not groups[a]:
+                del groups[a]
+    
+    return result
+
 def set_tl():
     global tl
     tl = 1
@@ -27,7 +46,6 @@ def reset_tl():
     global tl
     tl = 0
 
-    
 def inputsocket(input_socket):
     global forward_packet, packet, id, payload, token, send_packet, limit, tl, num_of_packets_to_send, ready, time_tracking, msg_to_be_received
 
@@ -105,8 +123,9 @@ def inputsocket(input_socket):
             if token["is_taken"] and token["source_id"] == id:
                 if token["ack"] or retransmission == 2:
                     rtt = time.time() - token["time_sent"]
-                    print("\nRTT:", rtt)
-                    print("No. of packets:", token["num_of_packets"])
+                    print(token["num_of_packets"], "packets sent to node", token["destination_id"])
+                    print("RTT:", rtt)
+                    print()
                     total_time_taken += rtt
                     num_of_packets_deliverd += token["num_of_packets"]
                     token["num_of_packets"] = 0
@@ -130,7 +149,7 @@ def inputsocket(input_socket):
                     if tht > limit:
                         print("\nToken Timeout")
                     print("Token Holding Time:", tht)
-                    print("avg time to deliver per packet:", total_time_taken / num_of_packets_deliverd)
+                    print("Average RTT per packet:", total_time_taken / num_of_packets_deliverd)
                     token["is_taken"] = False
                     token["source_id"] = 0
                     send_packet = False
@@ -215,6 +234,7 @@ def main():
                         if id == 1 :
                             destination += 1
                     bisect.insort(payload, (destination, str("Sample Text")))
+                payload = distribute_tuples(payload)
             if inpl == -1 :
                 for __ in range (20):
                     while(True):
@@ -222,13 +242,15 @@ def main():
                         if destination != id:
                             break
                     # payload.append((destination, str("sample text"))) 
-                    bisect.insort(payload, (destination, str("Sample Text")))            
+                    bisect.insort(payload, (destination, str("Sample Text"))) 
+                payload = distribute_tuples(payload)           
             else :
                 for i in range(inpl):
                     destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
                     payl = input("Enter the message: ")
                     bisect.insort(payload, (destination, payl))            
                     # payload.append((destination, payl))
+                payload = distribute_tuples(payload)
             send_packet = True
             ready = True
 
