@@ -17,15 +17,16 @@ ready = False
 time_tracking = 0
 token = {}
 msg_to_be_received = 0
+MAX_NOP = 5
 
 def distribute_tuples(tuples):
     from collections import defaultdict
-
+    global MAX_NOP
     groups = defaultdict(list)
     for a, b in tuples:
         groups[a].append((a, b))
     result = []
-    max_consecutive = 7
+    max_consecutive = MAX_NOP
     
     while groups:
         for a in sorted(groups.keys()):
@@ -89,7 +90,7 @@ def inputsocket(input_socket):
                     if msg_to_be_received > 0 :
                         print("\n[Message received] <node" + str(token["source_id"]) + ">: " + received_packet[:-1])
                         msg_to_be_received -= 1
-                        idx = 6-int(received_packet[-1])
+                        idx = (MAX_NOP-1)-int(received_packet[-1])
                         token["bitmap"] = token["bitmap"][:idx] + '1' + token["bitmap"][idx+1:]
                         if msg_to_be_received == 0 :
                             token["ack"] = True
@@ -141,7 +142,7 @@ def inputsocket(input_socket):
                 else:
                     retransmission += 1
                     for i in range(token["num_of_packets"]):
-                        if token["bitmap"][6-i]=='1':
+                        if token["bitmap"][MAX_NOP-1-i]=='1':
                             payload.remove(payload[i])
                 tht = time.time() - start_time
                 
@@ -169,7 +170,7 @@ def inputsocket(input_socket):
                             num_of_packets_to_send += 1
                         else :
                             break
-                        if num_of_packets_to_send == 7:
+                        if num_of_packets_to_send == MAX_NOP:
                             break 
                     token["num_of_packets"] = num_of_packets_to_send
                     token["ack"] = False
