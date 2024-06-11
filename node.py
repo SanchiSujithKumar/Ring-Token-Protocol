@@ -16,6 +16,7 @@ num_of_packets_to_send = 0
 ready = False
 time_tracking = 0
 token = {}
+msg_to_be_received = 0
 
 def set_tl():
     global tl
@@ -28,20 +29,23 @@ def reset_tl():
 
     
 def inputsocket(input_socket):
-    global forward_packet, packet, id, payload, token, send_packet, limit, tl, num_of_packets_to_send, ready, time_tracking
+    global forward_packet, packet, id, payload, token, send_packet, limit, tl, num_of_packets_to_send, ready, time_tracking, msg_to_be_received
 
-    # token = {}
-    msg_to_be_received = 0
     start_time = 0
     retransmission = 0
+    waiting_for_token = False
+    total_time_taken = 0.0
+    num_of_packets_deliverd = 0
     
     def check_time():
         threading.Timer(1.5, send_signal).start()
             
     def send_signal():
-        global time_tracking, token, packet, forward_packet
+        global time_tracking, token, packet, forward_packet, msg_to_be_received
+
         if msg_to_be_received and time.time()-time_tracking>1.5:
             token["ack"] = False
+            msg_to_be_received = 0
             packet = json.dumps(token).encode()
             forward_packet = True
 
@@ -63,25 +67,26 @@ def inputsocket(input_socket):
             received_packet = message.decode()
 
             if not received_packet.startswith("{") :
-                if msg_to_be_received > 0 :
-                    print("\n[Message received] <node" + str(token["source_id"]) + ">: " + received_packet[:-1])
-                    msg_to_be_received -= 1
-                    idx = 6-int(received_packet[-1])
-                    token["bitmap"] = token["bitmap"][:idx] + '1' + token["bitmap"][idx+1:]
-                    if msg_to_be_received == 0 :
-                        token["ack"] = True
-                        packet = json.dumps(token).encode()
+                if not waiting_for_token :
+                    if msg_to_be_received > 0 :
+                        print("\n[Message received] <node" + str(token["source_id"]) + ">: " + received_packet[:-1])
+                        msg_to_be_received -= 1
+                        idx = 6-int(received_packet[-1])
+                        token["bitmap"] = token["bitmap"][:idx] + '1' + token["bitmap"][idx+1:]
+                        if msg_to_be_received == 0 :
+                            token["ack"] = True
+                            packet = json.dumps(token).encode()
+                            forward_packet = True
+                    else :
+                        packet = message
                         forward_packet = True
-                else :
-                    packet = message
-                    forward_packet = True
                 input_socket.send('.'.encode())
                 continue
 
             token = json.loads(received_packet)
             if token["destination_id"] == id and token["source_id"] != 0:
                 x = random.random()
-                x=0.4
+                x = 0.4
                 if x > 0.3:
                     msg_to_be_received = token["num_of_packets"]
                     time_tracking = time.time()
@@ -99,12 +104,16 @@ def inputsocket(input_socket):
             
             if token["is_taken"] and token["source_id"] == id:
                 if token["ack"] or retransmission == 2:
-                    print("\nRTT:", time.time() - token["time_sent"])
+                    rtt = time.time() - token["time_sent"]
+                    print("\nRTT:", rtt)
                     print("No. of packets:", token["num_of_packets"])
+                    total_time_taken += rtt
+                    num_of_packets_deliverd += token["num_of_packets"]
                     token["num_of_packets"] = 0
                     token["ack"] = False
                     token["time_sent"] = None
                     token["destination_id"] = 0
+                    waiting_for_token = False
                     retransmission = 0
                     for i in range(num_of_packets_to_send) :
                         payload.remove(payload[0])
@@ -121,7 +130,7 @@ def inputsocket(input_socket):
                     if tht > limit:
                         print("\nToken Timeout")
                     print("Token Holding Time:", tht)
-                    print()
+                    print("avg time to deliver per packet:", total_time_taken / num_of_packets_deliverd)
                     token["is_taken"] = False
                     token["source_id"] = 0
                     send_packet = False
@@ -145,6 +154,7 @@ def inputsocket(input_socket):
                             break 
                     token["num_of_packets"] = num_of_packets_to_send
                     token["ack"] = False
+                    waiting_for_token = True
                     token["time_sent"] = time.time()
                     message = json.dumps(token).encode()
                 
@@ -217,7 +227,8 @@ def main():
                 for i in range(inpl):
                     destination = int(input(f"Enter destination id for sending {i+1}st packet: "))
                     payl = input("Enter the message: ")
-                    payload.append((destination, payl))
+                    bisect.insort(payload, (destination, payl))            
+                    # payload.append((destination, payl))
             send_packet = True
             ready = True
 

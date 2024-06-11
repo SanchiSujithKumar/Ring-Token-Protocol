@@ -58,7 +58,9 @@ def inputsocket(input_socket):
             
             if token["is_taken"] and token["source_id"] == id:
                 if token["ack"] or retransmission == 2:
-                    print("\nRTT:", time.time() - token["time_sent"])
+                    rtt = time.time() - token["time_sent"]
+                    print("\nRTT:", rtt)
+                    total_time_taken += rtt
                     token["payload"] = ""
                     token["ack"] = False
                     token["time_sent"] = None
@@ -74,7 +76,6 @@ def inputsocket(input_socket):
                     if tht > limit:
                         print("\nToken Timeout")
                     print("Token Holding Time:", tht)
-                    total_time_taken += tht
                     print("avg time to deliver per packet:", total_time_taken / num_of_packets_deliverd)
                     print()
                     token["is_taken"] = False
