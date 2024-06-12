@@ -173,6 +173,7 @@ def inputsocket(input_socket):
                         if num_of_packets_to_send == MAX_NOP:
                             break 
                     token["num_of_packets"] = num_of_packets_to_send
+                    token["bitmap"] = "".join(["0" for x in range(num_of_packets_to_send)])
                     token["ack"] = False
                     waiting_for_token = True
                     token["time_sent"] = time.time()
