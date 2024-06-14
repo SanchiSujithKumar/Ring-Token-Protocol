@@ -30,7 +30,7 @@ The Ring Token Protocol is a network communication protocol where nodes are arra
 
 ## Requirements
 
-- Python 3.x
+- Python 3
 - Standard Python libraries (`socket`, `threading`, `json`, `random`, `bisect`, `collections`)
 
 ## Installation
