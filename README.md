@@ -5,7 +5,6 @@ This project implements and optimizes the Ring Token Protocol for efficient mess
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Project Structure](#project-structure)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -19,31 +18,6 @@ This project implements and optimizes the Ring Token Protocol for efficient mess
 ## Introduction
 
 The Ring Token Protocol is a network communication protocol where nodes are arranged in a logical ring. A token circulates around the ring, granting the node holding it permission to send messages. This project implements the protocol with added features for optimization, such as packet distribution and retransmission handling.
-
-## Project Structure
-
-The project is organized into two main directories: `base` and `node`. Each directory contains different versions of the protocol:
-
-```
-ring-token-protocol/
-│
-├── base/
-│   ├── base_station_optimized.py
-│   ├── base_station_standard.py
-│   └── base_station_with_exit.py
-│
-├── node/
-    ├── node_optimized.py
-    ├── node_standard.py
-    └── node_with_exit.py
-```
-
-- **base_station_optimized.py**: Optimized version of the base station.
-- **base_station_standard.py**: Standard version of the base station.
-- **base_station_with_exit.py**: Version of the base station with exit functionality.
-- **node_optimized.py**: Optimized version of the node.
-- **node_standard.py**: Standard version of the node.
-- **node_with_exit.py**: Version of the node with exit functionality.
 
 ## Features
 
@@ -89,6 +63,10 @@ python base_station_optimized.py
 python base_station_with_exit.py
 ```
 
+- **base_station_optimized.py**: Optimized version of the base station.
+- **base_station_standard.py**: Standard version of the base station.
+- **base_station_with_exit.py**: Version of the base station with exit functionality.
+
 ### Node
 
 Navigate to the `node` directory and run one of the node scripts in separate terminal windows:
@@ -105,6 +83,10 @@ python node_optimized.py
 # or
 python node_with_exit.py
 ```
+
+- **node_optimized.py**: Optimized version of the node.
+- **node_standard.py**: Standard version of the node.
+- **node_with_exit.py**: Version of the node with exit functionality.
 
 ### Example Interaction
 
