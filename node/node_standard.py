@@ -17,7 +17,7 @@ tl = 0
 def set_tl():
     global tl
     tl = 1
-    threading.Timer(1, reset_tl).start()
+    threading.Timer(10, reset_tl).start()
     
 def reset_tl():
     global tl
